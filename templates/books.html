@@ -1,0 +1,200 @@
+{% load static %}
+{% url 'index' as index_%}
+{% url 'notes' as notes_%}
+{% url 'syllabus' as syllabus_%}
+{% url 'books' as books_%}
+{% url 'pyq' as pyq_%}
+{% url 'doubts' as doubts_%}
+{% url 'profile' as profile_%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Books — EduVault</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <style>
+    .book-card { padding: 1.25rem; }
+    .book-cover { aspect-ratio: 3/4; border-radius: .75rem; margin-bottom: 1rem; position: relative; overflow: hidden; display: flex; align-items: flex-end; padding: 1rem; box-shadow: inset -20px 0 40px rgba(0,0,0,.35); }
+    .book-cover-inner { position: relative; z-index: 1; }
+    .book-cover-inner h3 { font-family: 'Space Grotesk',sans-serif; font-weight: 700; color: #fff; font-size: 1.05rem; line-height: 1.3; }
+    .book-cover-inner p { color: rgba(255,255,255,.8); font-size: .75rem; margin-top: .2rem; }
+    .book-cover-icon { position: absolute; top: .75rem; right: .75rem; font-size: 1.75rem; }
+    .book-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: .5rem; }
+    .book-desc { font-size: .85rem; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 1rem; }
+    .book-actions { display: flex; gap: .5rem; }
+    .tilt { transition: transform .25s ease-out; transform-style: preserve-3d; }
+  </style>
+</head>
+<body>
+  <div id="particles" class="particles"></div>
+  <div id="scroll-progress" class="scroll-progress"></div>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="{% url 'index' %}" class="navbar-brand">
+        <div class="brand-icon">📚</div>
+       <span class="brand-name" style="font-size: 20px;">E-learn</span>
+        <span class="brand-name"> <sup style="font-size:10px;">for- GPC Harsud </sup></span>
+      </a>
+      <div class="nav-links">
+        <a href="{% url 'index' %}" class="nav-link">🏠 Home</a>
+        <a href="{% url 'notes' %}" class="nav-link">📝 Notes</a>
+        <a href="{% url 'syllabus' %}" class="nav-link">📗 Syllabus</a>
+        <a href="{% url 'books' %}" class="nav-link">📖 Books</a>
+        <a href="{% url 'pyq' %}" class="nav-link">📄 PYQ</a>
+        <a href="{% url 'doubts' %}" class="nav-link">❓ Doubts</a>
+        <a href="{% url 'profile' %}" class="nav-link">👤 Profile</a>
+      </div>
+     <a href="{% url 'doubts' %}" class="nav-mobile-icon btn btn-ghost btn-sm">❓</a>
+      {% if user.is_authenticated %}
+      <a href="{% url 'profile' %}" class="nav-mobile-icon btn btn-ghost btn-sm">👤</a>
+      {%else %}
+      <a href="{% url 'login' %}" class="nav-mobile-icon btn btn-ghost btn-sm">🔐</a>
+    {% endif %}
+
+    </div>
+  </nav>
+
+  <nav class="mobile-nav">
+    <a href="{% url 'index' %}">🏠<span>Home</span></a>
+    <a href="{% url 'notes' %}">📝<span>Notes</span></a>
+    <a href="{% url 'syllabus' %}">📗<span>Syllabus</span></a>
+    <a href="{% url 'books' %}">📖<span>Books</span></a>
+    <a href="{% url 'pyq' %}">📄<span>PYQ</span></a>
+    <!-- <a href="{% url 'doubts' %}">❓<span>Doubts</span></a> -->
+  </nav>
+
+
+  <main class="container page-content page-enter">
+
+    <div class="page-header">
+      <h1 class="gradient-text">📖 Reference Books</h1>
+      <p>Curated textbooks across branches. Read online or download.</p>
+    </div>
+
+    <div class="filter-bar reveal">
+      <input class="field" id="search" placeholder="🔍 Title or author…" oninput="renderBooks()">
+      <select class="field" id="filter-branch" onchange="renderBooks()">
+        <option value="all">All branches</option>
+      </select>
+       {% if request.user.is_authenticated and request.user.role == 'super_student' %}
+      <button id="books-admin-toggle" type="button" class="btn btn-primary" onclick="toggleBooksAdmin()">
+        ➕ Add Book
+      </button>
+    {% endif %}
+    </div>
+
+    <div class="grid-3" id="books-grid"></div>
+  </main>
+
+
+
+  <div id="toast-wrap" class="toast-wrap"></div>
+
+  <script src="{% static 'js/csrf.js' %}"></script>
+  <script src="{% static 'js/data.js' %}"></script>
+
+  <!-- Super student / admin upload (Books) -->
+  <div style="margin:1rem 0;display:flex;justify-content:flex-start">
+   
+  </div>
+
+  <section id="books-admin" class="card-glass" style="margin:1rem 10rem 3rem 10rem;  display:none; align-items: center;">
+    <h2 style="font-size:1rem; margin:0 0 1rem;">➕ Add Book</h2>
+<form id="book-upload-form" method="post" action="{% url 'upload_book' %}" enctype="multipart/form-data" style="display:grid; gap:.75rem; 
+    max-width:1300px; text-align: center;" onsubmit="return true;">
+      {% csrf_token %}
+      <input class="field" name="title" placeholder="Title" required>
+      <input class="field" name="author" placeholder="Author" required>
+      <input class="field" name="subject" placeholder="Subject" required>
+      <select class="field" name="branch" id="book-branch" required></select>
+      <select class="field" name="semester" id="book-sem" required></select>
+      <input class="field" type="number" name="rating" min="1" max="5" placeholder="Rating 1-5" required>
+      <textarea class="field" name="description" placeholder="Description" rows="3" required></textarea>
+      <input class="field" name="cover_link" placeholder="Cover link (optional)">
+      <input class="field" name="pdf_link" placeholder="PDF link" >
+      <!-- <input class="field" type="file" name="pdf_file" accept="application/pdf"> -->
+      <button class="btn btn-primary" type="submit">Upload</button>
+    </form>
+  </section>
+
+  <script src="{% static 'js/swipe.js' %}"></script>
+
+  <script>
+    if (typeof BRANCHES !== 'undefined') {
+      const bSel = document.getElementById('book-branch');
+      if (bSel) bSel.innerHTML = '<option value="">-- Select --</option>' + BRANCHES.map(b => `<option value="${b.code}">${b.code} – ${b.name}</option>`).join('');
+    }
+    const sSel = document.getElementById('book-sem');
+    if (sSel) {
+      sSel.innerHTML = '<option value="">-- Select --</option>';
+      for (let i=1;i<=8;i++) sSel.innerHTML += `<option value="${i}">Semester ${i}</option>`;
+    }
+  </script>
+  <script>
+    function toggleBooksAdmin(){
+      const adminBox = document.getElementById('books-admin');
+      if(!adminBox) return;
+      const isHidden = adminBox.style.display === 'none' || getComputedStyle(adminBox).display === 'none';
+      adminBox.style.display = isHidden ? 'block' : 'none';
+    }
+
+      async function renderBooks() {
+
+          const q = document.getElementById('search').value.toLowerCase();
+          const branch = document.getElementById('filter-branch').value;
+          const params = new URLSearchParams({branch});
+          const response = await fetch(`/api/books/?${params}`);
+          const data = await response.json();
+          let filtered = data.books;
+          if (q) {
+              filtered = filtered.filter(b => (b.title + b.author).toLowerCase().includes(q));
+          }
+          const container = document.getElementById('books-grid');
+          if (filtered.length === 0) {
+              container.innerHTML = '<div class="card-glass empty">No books match.</div>';
+              return;
+          }
+          container.innerHTML = filtered.map((b, i) => `
+          <article class="card-glass book-card reveal tilt" style="transition-delay:${i*50}ms">
+              <div class="book-cover" style="background:${b.cover_gradient}; ${b.cover_link ? `background-image:url(${b.cover_link}); background-size:cover;` : ''}">
+                  <div class="book-cover-icon">📘</div>
+                  <div class="book-cover-inner">
+                      <h3>${escapeHtml(b.title)}</h3>
+                      <p>${escapeHtml(b.author)}</p>
+                  </div>
+              </div>
+              <div class="book-meta">
+                  ${starsHTML(b.rating)}
+                  <div class="flex-wrap-gap">
+                      <span class="badge badge-cyan">${b.branch}</span>
+                      <span class="badge badge-violet">Sem ${b.semester}</span>
+                  </div>
+              </div>
+              <p class="book-desc">${escapeHtml(b.description)}</p>
+              <div class="book-actions">
+                  <a href="${b.pdf_url}" target="_blank" class="btn btn-ghost btn-sm">👁️ Read Online</a>
+                  <a href="${b.pdf_url}" download class="btn btn-primary btn-sm">⬇ Download</a>
+              </div>
+          </article>
+          `).join('');
+
+          container.querySelectorAll('.tilt').forEach(card => {
+              card.addEventListener('mousemove', e => {
+                  const r = card.getBoundingClientRect();
+                  const x = (e.clientX - r.left) / r.width - .5;
+                  const y = (e.clientY - r.top) / r.height - .5;
+                  card.style.transform = `perspective(900px) rotateY(${x*8}deg) rotateX(${-y*8}deg) translateY(-6px)`;
+              });
+              card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+          });
+          setTimeout(initReveal, 50);
+      }
+
+      document.getElementById('filter-branch').innerHTML = branchOptions();
+      renderBooks();
+      initCommon();
+  </script>
+</body>
+</html>

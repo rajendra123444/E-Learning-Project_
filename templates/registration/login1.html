@@ -1,0 +1,210 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>E-learn – Login / Register</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        /* Additional inline styles for auth page */
+        .auth-container {
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .auth-card {
+            max-width: 480px;
+            width: 100%;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            background: var(--gradient-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(108,99,255,0.3);
+            box-shadow: 0 20px 60px -20px rgba(0,0,0,0.5);
+        }
+        .auth-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid rgba(108,99,255,0.3);
+        }
+        .auth-tab {
+            flex: 1;
+            text-align: center;
+            padding: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--muted);
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+        }
+        .auth-tab.active {
+            color: var(--accent-2);
+            border-bottom-color: var(--accent-2);
+        }
+        .auth-form {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .auth-form.active {
+            display: block;
+        }
+        .errorlist {
+            color: #ff6b9d;
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+            list-style: none;
+            padding-left: 0;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .field-group {
+            margin-bottom: 1rem;
+        }
+        .field-group label {
+            display: block;
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+        .btn-block {
+            width: 100%;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="particles" class="particles"></div>
+    <div id="scroll-progress" class="scroll-progress"></div>
+
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <a href="/" class="navbar-brand">
+                <div class="brand-icon">📚</div>
+                 <span class="brand-name" style="font-size: 20px;">E-learn</span>
+        <span class="brand-name"> <sup style="font-size:10px;">By- GPC Harsud </sup></span>
+            </a>
+            <div class="nav-links">
+                <a href="/" class="nav-link">🏠 Home</a>
+                <a href="/notes/" class="nav-link">📝 Notes</a>
+                <a href="/syllabus/" class="nav-link">📗 Syllabus</a>
+                <a href="/books/" class="nav-link">📖 Books</a>
+                <a href="/pyq/" class="nav-link">📄 PYQ</a>
+                <a href="/doubts/" class="nav-link">❓ Doubts</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container auth-container">
+        <div class="auth-card">
+            <div class="auth-tabs">
+                <div class="auth-tab active" data-tab="login">🔐 Login</div>
+                <div class="auth-tab" data-tab="register">📝 Register</div>
+            </div>
+
+            <!-- Login Form -->
+            <div id="login-form" class="auth-form active">
+                <form method="post" action="{% url 'login' %}">
+                    {% csrf_token %}
+                    <div class="field-group">
+                        <label>Username</label>
+                        <input type="text" name="username" class="field" required autofocus>
+                    </div>
+                    <div class="field-group">
+                        <label>Password</label>
+                        <input type="password" name="password" class="field" required>
+                    </div>
+                    {% if form.errors %}
+                        <ul class="errorlist">
+                            <li>Invalid username or password.</li>
+                        </ul>
+                    {% endif %}
+                    <input type="hidden" name="next" value="{{ next|default:'/' }}">
+                    <button type="submit" class="btn btn-primary btn-block">Login →</button>
+                </form>
+            </div>
+
+            <!-- Registration Form -->
+            <div id="register-form" class="auth-form">
+                <form method="post" action="{% url 'register' %}">
+                    {% csrf_token %}
+                    <div class="field-group">
+                        <label>Username</label>
+                        <input type="text" name="username" class="field" required>
+                        {% if form.username.errors %}<ul class="errorlist">{{ form.username.errors }}</ul>{% endif %}
+                    </div>
+                    <div class="field-group">
+                        <label>Email</label>
+                        <input type="email" name="email" class="field">
+                    </div>
+                    <div class="field-group">
+                        <label>Password</label>
+                        <input type="password" name="password1" class="field" required>
+                    </div>
+                    <div class="field-group">
+                        <label>Confirm Password</label>
+                        <input type="password" name="password2" class="field" required>
+                    </div>
+                    <div class="field-group">
+                        <label>Branch</label>
+                        <select name="branch" class="field" id="reg-branch"></select>
+                    </div>
+                    <div class="field-group">
+                        <label>Semester</label>
+                        <select name="semester" class="field" id="reg-sem"></select>
+                    </div>
+                    <div class="field-group">
+                        <label>College</label>
+                        <input type="text" name="college" class="field" placeholder="Your college name">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Register →</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div id="toast-wrap" class="toast-wrap"></div>
+
+    <script src="{% static 'js/data.js' %}"></script>
+    <script src="{% static 'js/swipe.js' %}"></script>
+    <script>
+        // Tab switching
+        document.querySelectorAll('.auth-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const which = tab.dataset.tab;
+                document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+                document.getElementById(`${which}-form`).classList.add('active');
+            });
+        });
+
+        // Populate branch & semester dropdowns for registration
+        if (typeof BRANCHES !== 'undefined') {
+            const branchSelect = document.getElementById('reg-branch');
+            if (branchSelect) {
+                branchSelect.innerHTML = BRANCHES.map(b => `<option value="${b.code}">${b.code} – ${b.name}</option>`).join('');
+            }
+        }
+        const semSelect = document.getElementById('reg-sem');
+        if (semSelect) {
+            let semHtml = '';
+            for (let i = 1; i <= 8; i++) semHtml += `<option value="${i}">Semester ${i}</option>`;
+            semSelect.innerHTML = semHtml;
+        }
+
+        initCommon();
+        initParticles();
+        initScrollProgress();
+    </script>
+</body>
+</html>

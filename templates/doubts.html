@@ -1,0 +1,290 @@
+{% load static %}
+{% url 'index' as index_%}
+{% url 'notes' as notes_%}
+{% url 'syllabus' as syllabus_%}
+{% url 'books' as books_%}
+{% url 'pyq' as pyq_%}
+{% url 'doubts' as doubts_%}
+{% url 'profile' as profile_%}
+{% url 'logout' as logout_%}
+{% url 'login' as login_%}
+{% url 'register' as register_%}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Doubts — E-learn</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <meta name="username" content="">
+</head>
+<body>
+  <div id="particles" class="particles"></div>
+  <div id="scroll-progress" class="scroll-progress"></div>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="{% url 'index' %}" class="navbar-brand">
+        <div class="brand-icon">📚</div>
+        <span class="brand-name" style="font-size: 20px;">E-learn</span>
+        <span class="brand-name"> <sup style="font-size:10px;">By- GPC Harsud </sup></span>
+      </a>
+      <div class="nav-links">
+        <a href="{% url 'index' %}" class="nav-link">🏠 Home</a>
+        <a href="{% url 'notes' %}" class="nav-link">📝 Notes</a>
+        <a href="{% url 'syllabus' %}" class="nav-link">📗 Syllabus</a>
+        <a href="{% url 'books' %}" class="nav-link">📖 Books</a>
+        <a href="{% url 'pyq' %}" class="nav-link">📄 PYQ</a>
+        <a href="{% url 'doubts' %}" class="nav-link">❓ Doubts</a>
+        {% if user.is_authenticated %}
+          <a href="{% url 'profile' %}" class="nav-link">👤 Profile</a>
+
+        {% else %}
+          <a href="{% url 'login' %}" class="nav-link">🔐 Login</a>
+        
+        {% endif %}
+      </div>
+      <a href="{% url 'profile' %}" class="nav-mobile-icon btn btn-ghost btn-sm">👤</a>
+    </div>
+  </nav>
+
+  <nav class="mobile-nav">
+    <a href="{% url 'index' %}">🏠<span>Home</span></a>
+    <a href="{% url 'notes' %}">📝<span>Notes</span></a>
+    <a href="{% url 'syllabus' %}">📗<span>Syllabus</span></a>
+    <a href="{% url 'books' %}">📖<span>Books</span></a>
+    <a href="{% url 'pyq' %}">📄<span>PYQ</span></a>
+    <a href="{% url 'doubts' %}">❓<span>Doubts</span></a>
+  </nav>
+
+  <main class="container page-content page-enter">
+    <div class="page-header-row">
+      <div>
+        <h1 class="gradient-text">💡 Doubts Feed</h1>
+        <p style="color:var(--muted);margin-top:.4rem">Ask doubts, help peers. Mark the best answer.</p>
+      </div>
+      <div class="doubt-tabs" role="tablist" aria-label="Doubt sections">
+        <button class="doubt-tab active" data-tab="solve" type="button" onclick="setActiveTab('solve')">✅ Solve Doubts</button>
+        <button class="doubt-tab" data-tab="ask" type="button" onclick="setActiveTab('ask')">❓ Ask Doubt</button>
+      </div>
+
+      <style>
+        .doubt-tabs{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.25rem;margin-bottom:1rem}
+        .doubt-tab{padding:.55rem 1rem;border-radius:.7rem;font-weight:700;cursor:pointer;letter-spacing:-.01em;
+          color:var(--muted);background:rgba(108,99,255,.06);border:1px solid rgba(108,99,255,.25);font-family:var(--font-display)}
+        .doubt-tab.active{color:#fff;border-color:transparent;background:var(--gradient-hero);box-shadow:0 0 18px rgba(0,212,255,.25)}
+      </style>
+    </div>
+
+      <div class="pill-bar reveal" style="width:fit-content;margin-bottom:1.5rem" id="status-pills"></div>
+
+    <div id="doubts-list"></div>
+
+    <div id="ask-inline" style="display:none; margin-top: 1rem;" class="card-glass" aria-live="polite">
+      <p style="color:var(--muted); margin-bottom:.75rem">Use the button below to open the ask modal.</p>
+      <button class="btn btn-primary" type="button" onclick="openAskModal()">❓ Open Ask Doubt</button>
+    </div>
+  </main>
+•
+  <div id="ask-modal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h3>❓ Ask a Doubt</h3>
+      <div class="modal-form">
+        <input class="field" id="ask-title" placeholder="Doubt title">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+          <input class="field" id="ask-subject" placeholder="Subject">
+          <select class="field" id="ask-branch"></select>
+        </div>
+        <select class="field" id="ask-sem"></select>
+        <textarea class="field" id="ask-desc" placeholder="Describe your doubt clearly…"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="document.getElementById('ask-modal').style.display='none'">Cancel</button>
+        <button class="btn btn-primary" onclick="submitDoubt()">🚀 Post Doubt</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-wrap" class="toast-wrap"></div>
+
+  <script src="{% static 'js/csrf.js' %}"></script>
+  <script src="{% static 'js/data.js' %}"></script>
+  <script src="{% static 'js/swipe.js' %}"></script>
+  <script>
+      let activeFilter = 'all';
+      let replyOpenId = null;
+      let currentUsername = '';
+
+      // Fetch current user from profile API
+      async function loadCurrentUser() {
+          try {
+              const res = await fetch('/api/profile/');
+              const user = await res.json();
+              currentUsername = user.name;
+              document.querySelector('meta[name="username"]')?.setAttribute('content', currentUsername);
+          } catch(e) { console.warn(e); }
+      }
+
+      function renderStatusPills() {
+          document.getElementById('status-pills').innerHTML = ['all', 'open', 'solved'].map(f => `
+          <button class="pill ${activeFilter===f?'active':''}" onclick="setFilter('${f}')">
+            ${f.charAt(0).toUpperCase()+f.slice(1)}
+          </button>
+        `).join('');
+      }
+
+      function setFilter(f) {
+          activeFilter = f;
+          renderStatusPills();
+          renderDoubts();
+      }
+
+      async function renderDoubts() {
+          const response = await fetch(`/api/doubts/?status=${activeFilter}`);
+          const data = await response.json();
+          const list = data.doubts;
+          const container = document.getElementById('doubts-list');
+          if (list.length === 0) {
+              container.innerHTML = '<div class="card-glass empty">Nothing here yet.</div>';
+              return;
+          }
+          container.innerHTML = list.map((d, i) => `
+              <article class="card-glass doubt-card reveal" style="transition-delay:${i*40}ms" id="doubt-${d.id}">
+                  <div class="flex-wrap-gap">
+                      <span class="badge badge-cyan">${d.branch}</span>
+                      <span class="badge badge-violet">Sem ${d.semester}</span>
+                      <span class="badge badge-pink">${escapeHtml(d.subject)}</span>
+                      ${d.is_solved ? '<span class="badge badge-matrix">✓ Solved</span>' : '<span class="badge badge-open">● Open</span>'}
+                  </div>
+                  <h3>${escapeHtml(d.title)}</h3>
+                  <p class="desc">${escapeHtml(d.description)}</p>
+                  <div class="meta">asked by ${escapeHtml(d.asked_by)} • ${d.asked_at} • 👁 ${d.views}</div>
+                  ${d.replies.length ? `<div class="replies">${d.replies.map((r, idx) => `
+                  <div class="reply ${r.is_best ? 'best' : ''}">
+                  <div class="reply-by"><span>${escapeHtml(r.by)}</span>${r.is_best ? '<span class="badge badge-matrix">✓ Best Answer</span>' : ''}</div>
+                          <p class="reply-text">${escapeHtml(r.answer)}</p>
+                          ${!d.is_solved && d.asked_by === currentUsername ? `<button class="mark-best-btn" onclick="markBest('${d.id}', ${r.id})">Mark as best ✓</button>` : ''}
+                      </div>`).join('')}
+                  </div>` : ''}
+                  <div class="reply-box" style="margin-top:1rem">
+              <textarea class="field" id="reply-text-${d.id}" placeholder="Write your answer…"></textarea>
+              <div class="reply-actions">
+              <button class="btn btn-primary btn-sm" onclick="submitReply('${d.id}')">🚀 Post answer</button>
+              </div>
+              </div>
+              </article>
+          `).join('');
+          setTimeout(initReveal, 50);
+      }
+
+
+
+      async function submitReply(doubtId) {
+          // doubtId ko reply-text ka id banake use kar rahe hain, but textarea id uses d.id
+          // `doubts-list` me textarea id: reply-text-${d.id} => doubtId
+          const textEl = document.getElementById('reply-text-' + doubtId);
+          const text = textEl ? textEl.value.trim() : '';
+          if (!text) return;
+
+          const formData = new FormData();
+          formData.append('answer', text);
+          const response = await fetch(`/api/doubts/${doubtId}/reply/`, {
+              method: 'POST',
+              headers: {'X-CSRFToken': getCookie('csrftoken')},
+              body: formData
+          });
+          if (response.ok) {
+              await response.json().catch(() => ({}));
+              replyOpenId = null;
+              showToast('Reply added');
+              // Force a clean re-render so the just-created reply appears reliably
+              await renderDoubts();
+          } else {
+              const error = await response.json().catch(() => ({}));
+              showToast(error.error || 'Error adding reply');
+          }
+      }
+
+      async function markBest(doubtId, replyId) {
+          const response = await fetch(`/api/replies/${replyId}/mark_best/`, {
+              method: 'POST',
+              headers: {'X-CSRFToken': getCookie('csrftoken')}
+          });
+          if (response.ok) {
+              showToast('Marked as best answer');
+              renderDoubts();
+          } else {
+              showToast('Error marking best answer');
+          }
+      }
+
+      function openAskModal() {
+          document.getElementById('ask-branch').innerHTML = branchOptions('CSE', false);
+          let semHtml = '';
+          for (let s = 1; s <= 8; s++) semHtml += `<option value="${s}" ${s===4?'selected':''}>Semester ${s}</option>`;
+          document.getElementById('ask-sem').innerHTML = semHtml;
+          document.getElementById('ask-modal').style.display = 'grid';
+      }
+
+      async function submitDoubt() {
+          const title = document.getElementById('ask-title').value.trim();
+          const subject = document.getElementById('ask-subject').value.trim();
+          const description = document.getElementById('ask-desc').value.trim();
+          const branch = document.getElementById('ask-branch').value;
+          const semester = parseInt(document.getElementById('ask-sem').value);
+          if (!title || !subject || !description) {
+              showToast('Fill all fields');
+              return;
+          }
+          const formData = new FormData();
+          formData.append('title', title);
+          formData.append('subject', subject);
+          formData.append('description', description);
+          formData.append('branch', branch);
+          formData.append('semester', semester);  
+          const response = await fetch('/api/doubts/ask/', {
+              method: 'POST',
+              headers: {'X-CSRFToken': getCookie('csrftoken')},
+              body: formData
+          });
+          if (response.ok) {
+              document.getElementById('ask-modal').style.display = 'none';
+              showToast('Doubt posted');
+              renderDoubts();
+          } else {
+              showToast('Error posting doubt');
+          }
+      }
+
+      loadCurrentUser().then(() => {
+          renderStatusPills();
+          renderDoubts();
+      });
+      window.activeTab = 'solve';
+      window.setActiveTab = function(tab) {
+          window.activeTab = tab;
+          // highlight buttons by reading their data-tab
+          document.querySelectorAll('.doubt-tab').forEach(btn => {
+              const btab = btn.getAttribute('data-tab');
+              if (btab) btn.classList.toggle('active', btab === tab);
+          });
+          if (tab === 'ask') {
+              openAskModal();
+          } else {
+              const pillsWrap = document.getElementById('status-pills');
+              pillsWrap?.scrollIntoView({behavior:'smooth', block:'center'});
+              renderDoubts();
+          }
+      };
+
+      // Ensure initial highlight and render
+      window.setActiveTab('solve');
+
+      initCommon();
+
+      // Make helper available as global name expected by inline onclick
+      function setActiveTab(tab){ window.setActiveTab(tab); }
+  </script>
+</body>
+</html>

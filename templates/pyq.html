@@ -1,0 +1,170 @@
+{% load static %}
+{% url 'index' as index_%}
+{% url 'notes' as notes_%}
+{% url 'syllabus' as syllabus_%}
+{% url 'books' as books_%}
+{% url 'pyq' as pyq_%}
+{% url 'doubts' as doubts_%}
+{% url 'profile' as profile_%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>PYQ — EduVault</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+  <div id="particles" class="particles"></div>
+  <div id="scroll-progress" class="scroll-progress"></div>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="{% url 'index' %}" class="navbar-brand">
+        <div class="brand-icon">📚</div>
+        <span class="brand-name" style="font-size: 20px;">E-learn</span>
+        <span class="brand-name"> <sup style="font-size:10px;">for- GPC Harsud </sup></span>
+      </a>
+      <div class="nav-links">
+        <a href="{% url 'index' %}" class="nav-link">🏠 Home</a>
+        <a href="{% url 'notes' %}" class="nav-link">📝 Notes</a>
+        <a href="{% url 'syllabus' %}" class="nav-link">📗 Syllabus</a>
+        <a href="{% url 'books' %}" class="nav-link">📖 Books</a>
+        <a href="{% url 'pyq' %}" class="nav-link">📄 PYQ</a>
+        <a href="{% url 'doubts' %}" class="nav-link">❓ Doubts</a>
+        <a href="{% url 'profile' %}" class="nav-link">👤 Profile</a>
+      </div>
+       <a href="{% url 'doubts' %}" class="nav-mobile-icon btn btn-ghost btn-sm">❓</a>
+      {% if user.is_authenticated %}
+      <a href="{% url 'profile' %}" class="nav-mobile-icon btn btn-ghost btn-sm">👤</a>
+      {%else %}
+      <a href="{% url 'login' %}" class="nav-mobile-icon btn btn-ghost btn-sm">🔐</a>
+    {% endif %}
+
+    </div>
+  </nav>
+
+  <nav class="mobile-nav">
+    <a href="{% url 'index' %}">🏠<span>Home</span></a>
+    <a href="{% url 'notes' %}">📝<span>Notes</span></a>
+    <a href="{% url 'syllabus' %}">📗<span>Syllabus</span></a>
+    <a href="{% url 'books' %}">📖<span>Books</span></a>
+    <a href="{% url 'pyq' %}">📄<span>PYQ</span></a>
+    <!-- <a href="{% url 'doubts' %}">❓<span>Doubts</span></a> -->
+  </nav>
+
+  <main class="container page-content page-enter">
+    <div class="page-header">
+      <h1 class="gradient-text">📄 Previous Year Papers</h1>
+      <p>Filter by year, branch and exam type. Practice smarter.</p>
+      {% if request.user.is_authenticated and request.user.role == 'super_student' %}
+    <div style="margin:1rem 0;display:flex;justify-content:flex-end">
+      <button id="pyq-admin-toggle" type="button" class="btn btn-primary" onclick="togglePyqAdmin()">
+        ➕ Upload PYQ
+      </button>
+    </div>
+  {% endif %}
+    </div>
+
+    <div class="card-glass reveal" style="padding:1rem;margin-bottom:1.5rem;display:flex;flex-direction:column;gap:.75rem">
+      <div style="display:flex;flex-wrap:wrap;gap:.4rem" id="year-pills"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:.75rem">
+        
+        <select class="field" id="filter-branch" style="width:auto;flex:1;min-width:150px" onchange="renderPYQ()">
+          <option value="all">All branches</option>
+          
+        </select>
+
+        <select class="field" id="filter-type" style="width:auto;flex:1;min-width:150px" onchange="renderPYQ()">
+          <option value="all">All types</option>
+          <option value="mid">Mid-Sem</option>
+          <option value="end">End-Sem</option>
+          <option value="back">Backlog</option>
+        </select>
+        
+      </div>
+
+    </div>
+
+    <div class="grid-3" id="pyq-grid"></div>
+  </main>
+
+
+
+  <div id="toast-wrap" class="toast-wrap"></div>
+
+  <script src="{% static 'js/data.js' %}"></script>
+  <script src="{% static 'js/swipe.js' %}"></script>
+  <script src="{% static 'js/csrf.js' %}"></script>
+
+  <!-- Super student upload (toggle with a single button) -->
+  
+
+  <div id="pyq-admin" style="display:none;">
+    {% if request.user.is_authenticated and request.user.role == 'super_student' %}
+      {% include 'pyq_upload.html' %}
+    {% endif %}
+  </div>
+
+
+  <script>
+    const YEARS = ['all', 2024, 2023, 2022, 2021, 2020];
+    let activeYear = 'all';
+
+    function renderYearPills() {
+      document.getElementById('year-pills').innerHTML = YEARS.map(y => `
+        <button class="pill ${activeYear===y?'active':''}" onclick="setYear(${JSON.stringify(y)})">
+          ${y === 'all' ? 'All Years' : y}
+        </button>
+      `).join('');
+    }
+
+    function setYear(y) {
+      activeYear = y;
+      renderYearPills();
+      renderPYQ();
+    }
+
+    function togglePyqAdmin(){
+      const adminBox = document.getElementById('pyq-admin');
+      if(!adminBox) return;
+      const isHidden = adminBox.style.display === 'none' || getComputedStyle(adminBox).display === 'none';
+      adminBox.style.display = isHidden ? 'block' : 'none';
+    }
+
+    async function renderPYQ() {
+        const branch = document.getElementById('filter-branch').value;
+        const type = document.getElementById('filter-type').value;
+        const params = new URLSearchParams({branch, exam_type: type, year: activeYear});
+        const response = await fetch(`/api/pyqs/?${params}`);
+
+        const data = await response.json();
+        const filtered = data.pyqs;
+        const container = document.getElementById('pyq-grid');
+        if (filtered.length === 0) {
+            container.innerHTML = '<div class="card-glass empty">No papers match.</div>';
+            return;
+        }
+        container.innerHTML = filtered.map((p, i) => `
+            <article class="card-glass pyq-card reveal" style="transition-delay:${i*40}ms" onclick="window.open('${p.pdf_url}', '_blank')">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+                    <span class="year">${p.year}</span>
+                    <span class="badge badge-pink">${examLabel(p.exam_type)}</span>
+                </div>
+                <h3 style="font-size:1.05rem;font-weight:600">📄 ${escapeHtml(p.subject)}</h3>
+                <div class="flex-wrap-gap" style="margin-top:.5rem">
+                    <span class="badge badge-cyan">${p.branch}</span>
+                    <span class="badge badge-violet">Sem ${p.semester}</span>
+                </div>
+            </article>
+        `).join('');
+        setTimeout(initReveal, 50);
+    }
+
+    document.getElementById('filter-branch').innerHTML = branchOptions();
+    renderYearPills();
+    renderPYQ();
+    initCommon();
+  </script>
+</body>
+</html>

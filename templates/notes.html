@@ -1,0 +1,388 @@
+{% load static %}
+{% url 'index' as index_%}
+{% url 'notes' as notes_%}
+{% url 'syllabus' as syllabus_%}
+{% url 'books' as books_%}
+{% url 'pyq' as pyq_%}
+{% url 'doubts' as doubts_%}
+{% url 'profile' as profile_%}
+{% url 'logout' as logout_%}
+{% url 'login' as login_%}
+{% url 'register' as register_%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="csrf-token" content="">
+  <title>E-learn · Notes Vault</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+  <div id="particles" class="particles"></div>
+  <div id="scroll-progress" class="scroll-progress"></div>
+
+  <!-- ========== MAIN NAVIGATION (fixed + auth buttons) ========== -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="{% url 'index' %}" class="navbar-brand">
+        <div class="brand-icon">📚</div>
+        <span class="brand-name">E-learn</span>
+        <span class="brand-name"><sup>for GPC Harsud</sup></span>
+      </a>
+      <div class="nav-links">
+        <a href="{% url 'index' %}" class="nav-link">🏠 Home</a>
+        <a href="{% url 'notes' %}" class="nav-link active">📝 Notes</a>
+        <a href="{% url 'syllabus' %}" class="nav-link">📗 Syllabus</a>
+        <a href="{% url 'books' %}" class="nav-link">📖 Books</a>
+        <a href="{% url 'pyq' %}" class="nav-link">📄 PYQ</a>
+        <a href="{% url 'doubts' %}" class="nav-link">❓ Doubts</a>
+
+       </div>
+       <a href="{% url 'doubts' %}" class="nav-mobile-icon btn btn-ghost btn-sm">❓</a>
+    
+      {% if user.is_authenticated %}
+      <a href="{% url 'profile' %}" class="nav-mobile-icon btn btn-ghost btn-sm">👤</a>
+      {%else %}
+      <a href="{% url 'login' %}" class="nav-mobile-icon btn btn-ghost btn-sm">🔐</a>
+    {% endif %}
+
+    </div>
+  </nav>
+
+  <!-- mobile bottom navigation (fully functional) -->
+  <nav class="mobile-nav" style="position: fixed;">
+    <a href="{% url 'index' %}">🏠<span>Home</span></a>
+    <a href="{% url 'notes' %}" class="active">📝<span>Notes</span></a>
+    <a href="{% url 'syllabus' %}">📗<span>Syllabus</span></a>
+    <a href="{% url 'books' %}">📖<span>Books</span></a>
+    <a href="{% url 'pyq' %}">📄<span>PYQ</span></a>
+
+  </nav>
+
+  <main class="container page-content page-enter">
+    <div class="page-header">
+      <h1 class="gradient-text">📝 Notes Vault</h1>
+      <p>Browse, view, download or upload notes — filter by branch, semester and search.</p>
+    </div>
+
+    <div class="filter-bar reveal">
+      <input class="field" id="search" placeholder="🔍 Search title, subject, tags…" oninput="renderNotes()">
+      <select class="field" id="filter-branch" onchange="renderNotes()">
+        <option value="all">All branches</option>
+      </select>
+      <select class="field" id="filter-sem" onchange="renderNotes()">
+        <option value="all">All semesters</option>
+      </select>
+      <button class="btn btn-primary" id="globalUploadBtn" onclick="openUploadModal()">⬆ Upload Note</button>
+    </div>
+
+    <div class="grid-3" id="notes-grid"></div>
+  </main>
+
+
+
+  <!-- DELETE CONFIRMATION -->
+  <div id="confirm-modal" class="modal-backdrop" style="display:none;" onclick="closeConfirm(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h3>Delete this note?</h3>
+      <p class="confirm-body">This action cannot be undone. The PDF will be removed permanently.</p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeConfirm()">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmDelete()">Yes, Delete 🗑️</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- UPLOAD MODAL -->
+  <div id="upload-modal" class="modal-backdrop" style="display:none;" onclick="closeUpload(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h3>⬆ Upload Note</h3>
+      <div class="modal-form">
+        <input class="field" id="up-title" placeholder="Title">
+        <input class="field" id="up-subject" placeholder="Subject">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem">
+          <select class="field" id="up-branch"></select>
+          <select class="field" id="up-sem"></select>
+          <select class="field" id="up-unit"></select>
+        </div>
+        <input class="field" id="up-tags" placeholder="Tags (comma separated)">
+        <textarea class="field" id="up-desc" placeholder="Description"></textarea>
+        <div>
+         
+          <div style="font-size:.82rem;color:var(--muted);margin-bottom:.35rem">PDF file</div>
+           <input class="field" id="up-cover" placeholder="Cover image URL (Google Photos)"><br><br>
+          <input class="field" id="up-pdf-link" placeholder="PDF link (optional if file uploaded)">
+          <!-- <input type="file" id="up-pdf-file" accept="application/pdf" class="field"> -->
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeUpload()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitUpload()">🚀 Upload</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ASK DOUBT MODAL -->
+  <div id="ask-modal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h3>❓ Ask a Doubt</h3>
+      <div class="modal-form">
+        <input class="field" id="ask-title" placeholder="Doubt title">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+          <input class="field" id="ask-subject" placeholder="Subject">
+          <select class="field" id="ask-branch"></select>
+        </div>
+        <select class="field" id="ask-sem"></select>
+        <textarea class="field" id="ask-desc" placeholder="Describe your doubt clearly…"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="document.getElementById('ask-modal').style.display='none'">Cancel</button>
+        <button class="btn btn-primary" onclick="submitDoubt()">🚀 Post Doubt</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-wrap" class="toast-wrap"></div>
+
+  <script src="{% static 'js/data.js' %}"></script>
+  <script src="{% static 'js/swipe.js' %}"></script>
+  <script src="{% static 'js/csrf.js' %}"></script>
+  <script>
+    // ---------- GLOBAL AUTH STATE (set by django) ----------
+    window.isAuthenticated = {% if user.is_authenticated %}true {% else %}false{% endif %};
+    
+    // ---------- Helper: block unauthorized actions ----------
+    function requireAuth(actionName) {
+      if (!window.isAuthenticated) {
+        showToast(`🔒 Please login to ${actionName}`);
+        setTimeout(() => { window.location.href = "{% url 'login' %}?next={{ request.path }}"; }, 1200);
+        return false;
+      }
+      return true;
+    }
+
+    // Override upload & ask modal openers with auth guard
+    const originalUpload = window.openUploadModal;
+    window.openUploadModal = function() {
+      if (!requireAuth('upload a note')) return;
+      document.getElementById('up-branch').innerHTML = branchOptions('CSE', false);
+      let semHtml='', unitHtml='';
+      for (let s=1;s<=8;s++) semHtml += `<option value="${s}" ${s===3?'selected':''}>Sem ${s}</option>`;
+      for (let u=1;u<=6;u++) unitHtml += `<option value="${u}" ${u===1?'selected':''}>Unit ${u}</option>`;
+      document.getElementById('up-sem').innerHTML = semHtml;
+      document.getElementById('up-unit').innerHTML = unitHtml;
+      document.getElementById('upload-modal').style.display = 'grid';
+    };
+    
+    window.openAskModal = function() {
+      if (!requireAuth('ask a doubt')) return;
+      document.getElementById('ask-branch').innerHTML = branchOptions('CSE', false);
+      let semHtml = '';
+      for (let s=1;s<=8;s++) semHtml += `<option value="${s}" ${s===4?'selected':''}>Semester ${s}</option>`;
+      document.getElementById('ask-sem').innerHTML = semHtml;
+      document.getElementById('ask-modal').style.display = 'grid';
+    };
+
+    let pendingDeleteId = null;
+
+    async function renderNotes() {
+        const q = document.getElementById('search').value.toLowerCase();
+        const branch = document.getElementById('filter-branch').value;
+        const sem = document.getElementById('filter-sem').value;
+
+        const params = new URLSearchParams({branch, semester: sem, search: q});
+        const response = await fetch(`/api/notes/?${params}`);
+        const data = await response.json();
+        const notes = data.notes;
+
+        const container = document.getElementById('notes-grid');
+        if (notes.length === 0) {
+            container.innerHTML = '<div class="card-glass empty">✨ No notes match these filters. Be the first to upload!</div>';
+            return;
+        }
+        container.innerHTML = notes.map((n, i) => {
+          const showDelete = n.is_mine && window.isAuthenticated;
+          return `
+            <article class="card-glass note-card reveal" style="transition-delay:${i*40}ms">
+                <div class="note-card-badges">
+                    <span class="badge badge-cyan">${escapeHtml(n.branch)}</span>
+                    <span class="badge badge-violet">Sem ${n.semester}</span>
+                    <span class="badge badge-pink">Unit ${n.unit}</span>
+                    ${n.is_mine ? '<span class="badge badge-matrix">Mine</span>' : ''}
+                </div>
+                <h3>${escapeHtml(n.title)}</h3>
+                <p class="subject">${escapeHtml(n.subject)}</p>
+                <p class="desc">${escapeHtml(n.description)}</p>
+                <div class="tags">${(n.tags || []).map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>
+                <div class="actions">
+                    ${n.pdf_url ? `<a href="${n.pdf_url}" target="_blank" class="btn btn-ghost btn-sm">👁️ View</a>` : ''}
+                    <a href="${n.pdf_url}" download class="btn btn-primary btn-sm" onclick="incDownload(${n.id})">⬇ Download</a>
+                    <button class="btn btn-sm btn-bookmark" data-id="${n.id}">🔖 Save</button>
+                    ${showDelete ? `<button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="askDelete('${n.id}')">🗑️</button>` : ''}
+                </div>
+                <div class="meta">
+                    <span>by ${escapeHtml(n.uploaded_by)} • ${n.uploaded_at}</span>
+                    <span>⬇ ${n.download_count}</span>
+                </div>
+            </article>
+          `;
+        }).join('');
+        
+        // attach bookmark listeners with auth
+        document.querySelectorAll('.btn-bookmark').forEach(btn => {
+          const id = btn.dataset.id;
+          btn.onclick = () => toggleBookmark(id, btn);
+        });
+        setTimeout(initReveal, 50);
+    }
+
+    async function incDownload(id) {
+        await fetch(`/api/notes/${id}/download/`, { method: 'POST' });
+        renderNotes();
+    }
+
+    async function toggleBookmark(id, btn) {
+        if (!requireAuth('save bookmarks')) return;
+        const res = await fetch(`/api/notes/${id}/bookmark/`, { method: 'POST', headers: { 'X-CSRFToken': getCookie('csrftoken') } });
+        const data = await res.json();
+        if (data.bookmarked) {
+            btn.textContent = '🔖 Saved';
+            btn.classList.add('btn-primary');
+            btn.classList.remove('btn-ghost');
+            showToast('✨ Saved to bookmarks');
+        } else {
+            btn.textContent = '🔖 Save';
+            btn.classList.add('btn-ghost');
+            btn.classList.remove('btn-primary');
+            showToast('Removed bookmark');
+        }
+    }
+
+    function askDelete(id) {
+        if (!requireAuth('delete a note')) return;
+        pendingDeleteId = id;
+        document.getElementById('confirm-modal').style.display = 'grid';
+    }
+    
+    function closeConfirm(e) {
+        if (!e || e.target === document.getElementById('confirm-modal')) {
+            document.getElementById('confirm-modal').style.display = 'none';
+            pendingDeleteId = null;
+        }
+    }
+
+    async function confirmDelete() {
+        if (!pendingDeleteId) return;
+        const response = await fetch(`/api/notes/${pendingDeleteId}/delete/`, {
+            method: 'DELETE',
+            headers: {'X-CSRFToken': getCookie('csrftoken')}
+        });
+        if (response.ok) {
+            pendingDeleteId = null;
+            document.getElementById('confirm-modal').style.display = 'none';
+            showToast('🗑️ Note deleted');
+            renderNotes();
+        } else {
+            showToast('Delete failed (permission?)');
+        }
+    }
+
+    function closeUpload(e) {
+        if (!e || e.target === document.getElementById('upload-modal'))
+            document.getElementById('upload-modal').style.display = 'none';
+    }
+
+    async function submitUpload() {
+        const title = document.getElementById('up-title').value.trim();
+        const subject = document.getElementById('up-subject').value.trim();
+        if (!title || !subject) {
+            showToast('Title and subject are required');
+            return;
+        }
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('subject', subject);
+        formData.append('branch', document.getElementById('up-branch').value);
+        formData.append('semester', document.getElementById('up-sem').value);
+        formData.append('unit', document.getElementById('up-unit').value);
+        formData.append('description', document.getElementById('up-desc').value);
+        formData.append('tags', document.getElementById('up-tags').value);
+        formData.append('cover_link', document.getElementById('up-cover').value);
+        formData.append('pdf_link', document.getElementById('up-pdf-link').value);
+        const pdfFile = document.getElementById('up-pdf-file').files[0];
+        if (pdfFile) formData.append('pdf_file', pdfFile);
+        if (!pdfFile && !formData.get('pdf_link')) {
+            showToast('Either PDF file or link required');
+            return;
+        }
+
+        const response = await fetch('/api/notes/upload/', {
+            method: 'POST',
+            headers: {'X-CSRFToken': getCookie('csrftoken')},
+            body: formData
+        });
+        if (response.ok) {
+            document.getElementById('upload-modal').style.display = 'none';
+            showToast('🚀 Note uploaded!');
+            renderNotes();
+            document.getElementById('up-title').value = '';
+            document.getElementById('up-subject').value = '';
+            document.getElementById('up-desc').value = '';
+            document.getElementById('up-tags').value = '';
+            document.getElementById('up-cover').value = '';
+            document.getElementById('up-pdf-link').value = '';
+            document.getElementById('up-pdf-file').value = '';
+        } else {
+            const err = await response.json();
+            showToast('Error: ' + (err.error || 'upload failed'));
+        }
+    }
+
+    async function submitDoubt() {
+        if (!requireAuth('post a doubt')) return;
+        const title = document.getElementById('ask-title').value.trim();
+        const subject = document.getElementById('ask-subject').value.trim();
+        const description = document.getElementById('ask-desc').value.trim();
+        const branch = document.getElementById('ask-branch').value;
+        const semester = parseInt(document.getElementById('ask-sem').value);
+        if (!title || !subject || !description) {
+            showToast('Fill all fields');
+            return;
+        }
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('subject', subject);
+        formData.append('description', description);
+        formData.append('branch', branch);
+        formData.append('semester', semester);
+        const response = await fetch('/api/doubts/ask/', {
+            method: 'POST',
+            headers: {'X-CSRFToken': getCookie('csrftoken')},
+            body: formData
+        });
+        if (response.ok) {
+            document.getElementById('ask-modal').style.display = 'none';
+            showToast('💬 Doubt posted!');
+            ['ask-title', 'ask-subject', 'ask-desc'].forEach(id => document.getElementById(id).value = '');
+        } else {
+            showToast('Error posting doubt');
+        }
+    }
+
+    // populate filters and render
+    document.getElementById('filter-branch').innerHTML = branchOptions();
+    document.getElementById('filter-sem').innerHTML = semOptions();
+    renderNotes();
+    initCommon();
+
+    // additional UI adaptation: if not logged in, show subtle warning on upload button hover
+    if (!window.isAuthenticated) {
+      const upBtn = document.getElementById('globalUploadBtn');
+      if (upBtn) upBtn.title = "Login required to upload notes";
+    }
+
+  </script>
+</body>
+</html>
+

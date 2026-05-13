@@ -1,0 +1,289 @@
+{% load static %}
+{% url 'index' as index_%}
+{% url 'notes' as notes_%}
+{% url 'syllabus' as syllabus_%}
+{% url 'books' as books_%}
+{% url 'pyq' as pyq_%}
+{% url 'doubts' as doubts_%}
+{% url 'profile' as profile_%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Syllabus — EduVault</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+  <div id="particles" class="particles"></div>
+  <div id="scroll-progress" class="scroll-progress"></div>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="{% url 'index' %}" class="navbar-brand">
+        <div class="brand-icon">📚</div>
+       <span class="brand-name" style="font-size: 20px;">E-learn</span>
+        <span class="brand-name"> <sup style="font-size:10px;">for- GPC Harsud </sup></span>
+      </a>
+      <div class="nav-links">
+        <a href="{% url 'index' %}" class="nav-link">🏠 Home</a>
+        <a href="{% url 'notes' %}" class="nav-link">📝 Notes</a>
+        <a href="{% url 'syllabus' %}" class="nav-link">📗 Syllabus</a>
+        <a href="{% url 'books' %}" class="nav-link">📖 Books</a>
+        <a href="{% url 'pyq' %}" class="nav-link">📄 PYQ</a>
+        <a href="{% url 'doubts' %}" class="nav-link">❓ Doubts</a>
+        <a href="{% url 'profile' %}" class="nav-link">👤 Profile</a>
+      </div>
+       <a href="{% url 'doubts' %}" class="nav-mobile-icon btn btn-ghost btn-sm">❓</a>
+      {% if user.is_authenticated %}
+      <a href="{% url 'profile' %}" class="nav-mobile-icon btn btn-ghost btn-sm">👤</a>
+      {%else %}
+      <a href="{% url 'login' %}" class="nav-mobile-icon btn btn-ghost btn-sm">🔐</a>
+    {% endif %}
+
+    </div>
+      
+  </nav>
+
+  <nav class="mobile-nav">
+    <a href="{% url 'index' %}">🏠<span>Home</span></a>
+    <a href="{% url 'notes' %}">📝<span>Notes</span></a>
+    <a href="{% url 'syllabus' %}">📗<span>Syllabus</span></a>
+    <a href="{% url 'books' %}">📖<span>Books</span></a>
+    <a href="{% url 'pyq' %}">📄<span>PYQ</span></a>
+    <!-- <a href="{% url 'doubts' %}">❓<span>Doubts</span></a> -->
+    
+  </nav>
+
+  <main class="container page-content page-enter">
+    <div class="page-header">
+      <h1 class="gradient-text">📗 Syllabus Browser</h1>
+      <p>Unit-wise breakdown by branch &amp; semester. View or download PDFs.</p>
+       <div style="margin-top:1.25rem;display:flex;justify-content:flex-end ">
+      {% if user.is_authenticated and user.role == 'super_student' %}
+        <button id="syllabus-admin-toggle" type="button" class="btn btn-primary" onclick="toggleSyllabusAdmin()">
+          ➕ Add Syllabus
+        </button>
+      {% endif %}
+    </div>
+    </div>
+      
+    <div class="pill-bar reveal" id="branch-pills"></div>
+
+    <div class="grid-2" id="syllabus-grid"></div>
+<!-- Super student upload panel (toggle with a single button) -->
+   
+
+   <div id="syllabus-admin" class="card-glass" style="margin-top:1.25rem; display:none;">
+  <div style="padding:1.5rem;">
+    <h2 style="font-size:1.15rem; margin:0 0 .75rem; font-weight:700;">
+      ➕ Add Syllabus <span style="font-weight:400;color:var(--muted);font-size:0.8rem;">(Super Student)</span>
+    </h2>
+    
+    <form id="syllabus-upload-form" class="syllabus-form" enctype="multipart/form-data">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="subj-name">📘 Subject Name</label>
+          <input id="subj-name" name="subject_name" class="field" placeholder="e.g., Data Structures" required />
+        </div>
+        <div class="form-group">
+          <label for="subj-code">🏷️ Subject Code</label>
+          <input id="subj-code" name="subject_code" class="field" placeholder="CS301" required />
+        </div>
+        <div class="form-group">
+          <label for="branch-code">🌿 Branch Code</label>
+          <input id="branch-code" name="branch" class="field" placeholder="e.g., CSE" required />
+        </div>
+        <div class="form-group">
+          <label for="sem-num">📅 Semester</label>
+          <input id="sem-num" type="number" name="semester" min="1" class="field" placeholder="1-8" required />
+        </div>
+      </div>
+      
+      <div class="form-group" style="margin-top:1rem;">
+        <label for="units-json">📚 Units <small style="color:var(--muted)">(JSON format)</small></label>
+        <textarea id="units-json" name="units" rows="4" class="field" placeholder='[{"n":1,"topic":"Arrays &amp; Linked Lists"}]'>[{"n":1,"topic":"Unit 1"}]</textarea>
+      </div>
+      
+      <div class="form-group">
+        <label for="pdf-link">🔗 PDF Link <small style="color:var(--muted)">(Google Drive or direct URL)</small></label>
+        <input id="pdf-link" name="pdf_link" class="field" placeholder="https://drive.google.com/..." />
+      </div>
+      
+      <!-- <div class="form-group">
+        <label for="pdf-file">📂 OR Upload PDF File</label>
+        <input id="pdf-file" type="file" name="pdf_file" accept="application/pdf" class="field" />
+      </div>
+       -->
+      <div style="display:flex; gap:.75rem; margin-top:1.5rem;">
+        <button type="submit" class="btn btn-primary">📤 Upload Syllabus</button>
+        <button type="button" class="btn btn-ghost" onclick="document.getElementById('syllabus-upload-form').reset()">🔄 Reset</button>
+      </div>
+    </form>
+    
+    <div id="syllabus-upload-toast" style="margin-top:.75rem;"></div>
+    
+    <div style="margin-top:1.5rem; border-top:1px solid rgba(108,99,255,0.15); padding-top:1rem;">
+      <h3 style="font-size:.95rem; margin:0 0 .25rem;">📎 Google Drive Preview</h3>
+      <p style="font-size:.75rem; color:var(--muted); margin:0 0 .75rem;">
+        Paste a share link above <span style="text-decoration:underline;cursor:pointer;" onclick="document.getElementById('pdf-link').focus()">here</span> to see preview instantly.
+      </p>
+      <iframe id="drive-preview" style="width:100%; height:360px; border:0; border-radius:12px; background:rgba(255,255,255,.03);" src=""></iframe>
+    </div>
+  </div>
+</div>
+  </main>
+
+
+
+
+
+  <div id="toast-wrap" class="toast-wrap"></div>
+
+
+  <script src="{% static 'js/data.js' %}"></script>
+  <script src="{% static 'js/swipe.js' %}"></script>
+  <script src="{% static 'js/csrf.js' %}"></script>
+  <script>
+    let activeBranch = 'CSE';
+
+    function renderBranchPills() {
+      const container = document.getElementById('branch-pills');
+      container.innerHTML = BRANCHES.map(b => `
+        <button class="pill ${b.code === activeBranch ? 'active' : ''}" onclick="setBranch('${b.code}')">
+          ${b.code} <span style="opacity:.7">${window.innerWidth > 768 ? '— '+b.name : ''}</span>
+        </button>
+      `).join('');
+    }
+
+    function setBranch(code) {
+      activeBranch = code;
+      renderBranchPills();
+      renderSyllabus();
+    }
+
+    async function renderSyllabus() {
+        const response = await fetch(`/api/syllabus/?branch=${activeBranch}`);
+        const data = await response.json();
+        const list = data.syllabi;
+        const container = document.getElementById('syllabus-grid');
+        if (list.length === 0) {
+            container.innerHTML = `<div class="card-glass empty">No syllabi yet for ${activeBranch}.</div>`;
+            return;
+        }
+        container.innerHTML = list.map((s, i) => `
+            <article class="card-glass syllabus-card reveal" style="transition-delay:${i*60}ms">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.5rem">
+                    <div>
+                        <h3 style="font-size:1.05rem;font-weight:600">📗 ${escapeHtml(s.subject_name)}</h3>
+                        <p style="font-size:.72rem;font-family:'JetBrains Mono',monospace;color:var(--muted);margin-top:.2rem">${s.subject_code}</p>
+                    </div>
+                    <div class="flex-wrap-gap" style="flex-shrink:0">
+                        <span class="badge badge-cyan">${s.branch}</span>
+                        <span class="badge badge-violet">Sem ${s.semester}</span>
+                    </div>
+                </div>
+                <p style="font-size:.85rem;color:var(--muted)">${(Array.isArray(s.units) ? s.units : []).length} units</p>
+                <button class="toggle-btn" onclick="toggleUnits('${s.id}', this)">▶ Show units</button>
+                <ul class="units-list" id="units-${s.id}">
+                    ${(Array.isArray(s.units) ? s.units : []).map(u => `<li class="unit-item"><span class="badge badge-matrix" style="flex-shrink:0">U${u.n}</span><span>${escapeHtml(u.topic)}</span></li>`).join('')}
+                </ul>
+                <div style="display:flex;gap:.5rem;margin-top:1rem">
+                    <a href="${s.pdf_url}" target="_blank" class="btn btn-ghost btn-sm">👁️ View Syllabus</a>
+                    <a href="${s.pdf_url}" download class="btn btn-primary btn-sm">⬇ Download PDF</a>
+                </div>
+            </article>
+        `).join('');
+        setTimeout(initReveal, 50);
+    }
+
+    function toggleUnits(id, btn) {
+      const list = document.getElementById('units-'+id);
+      const isOpen = list.classList.contains('open');
+      list.classList.toggle('open');
+      btn.textContent = isOpen ? '▶ Show units' : '▼ Hide units';
+    }
+
+    // ---- syllabus admin (super_student) controls + google drive preview ----
+
+    function toggleSyllabusAdmin(){
+      const adminBox = document.getElementById('syllabus-admin');
+      if(!adminBox) return;
+      const isHidden = adminBox.style.display === 'none' || getComputedStyle(adminBox).display === 'none';
+      adminBox.style.display = isHidden ? 'block' : 'none';
+    }
+
+    (function initAdminAndPreview(){
+      const adminBox = document.getElementById('syllabus-admin');
+
+      const uploadForm = document.getElementById('syllabus-upload-form');
+      const driveFrame = document.getElementById('drive-preview');
+      const pdfLinkInput = uploadForm ? uploadForm.querySelector('input[name="pdf_link"]') : null;
+
+      // adminBox visibility is controlled by the toggle button
+
+      function driveEmbedFromLink(link){
+        if(!link) return '';
+        try{
+          // direct embed link often uses /file/d/FILEID/.. or ?id=FILEID
+          const url = new URL(link);
+          const paths = url.pathname.split('/').filter(Boolean);
+          // detect /file/d/<id>
+          const fileIndex = paths.indexOf('d');
+          if(fileIndex !== -1 && paths[fileIndex+1]){
+            const id = paths[fileIndex+1];
+            return `https://drive.google.com/file/d/${id}/preview`;
+          }
+          // detect id query
+          const idParam = url.searchParams.get('id');
+          if(idParam) return `https://drive.google.com/file/d/${idParam}/preview`;
+        }catch(e){
+          // fallback using regex
+          const m1 = link.match(/\/d\/([a-zA-Z0-9_-]+)/);
+          if(m1 && m1[1]) return `https://drive.google.com/file/d/${m1[1]}/preview`;
+          return '';
+        }
+        return '';
+      }
+
+      if(pdfLinkInput && driveFrame){
+        pdfLinkInput.addEventListener('input', () => {
+          const embed = driveEmbedFromLink(pdfLinkInput.value.trim());
+          driveFrame.src = embed;
+        });
+      }
+
+      if(uploadForm){
+        uploadForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const toast = document.getElementById('syllabus-upload-toast');
+
+          const fd = new FormData(uploadForm);
+          try{
+            const res = await fetch('/api/syllabus/upload/', {
+              method: 'POST',
+
+              body: fd
+            });
+            const data = await res.json();
+            if(!res.ok){
+              toast.innerHTML = `<div class="card-glass" style="padding:.75rem;color:var(--danger)">❌ ${escapeHtml(data.error || 'Upload failed')}</div>`;
+              return;
+            }
+            toast.innerHTML = `<div class="card-glass" style="padding:.75rem">✅ ${escapeHtml(data.message || 'Uploaded')}</div>`;
+            uploadForm.reset();
+            if(pdfLinkInput) driveFrame.src = '';
+            renderSyllabus();
+          }catch(err){
+            toast.innerHTML = `<div class="card-glass" style="padding:.75rem;color:var(--danger)">❌ ${escapeHtml(String(err))}</div>`;
+          }
+        });
+      }
+    })();
+
+    renderBranchPills();
+    renderSyllabus();
+    initCommon();
+  </script>
+</body>
+</html>

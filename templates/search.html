@@ -1,0 +1,294 @@
+{% load static %}
+{% url 'index' as index_ %}
+{% url 'notes' as notes_ %}
+{% url 'syllabus' as syllabus_ %}
+{% url 'books' as books_ %}
+{% url 'pyq' as pyq_ %}
+{% url 'doubts' as doubts_ %}
+{% url 'profile' as profile_ %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Global Search — E-learn</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <style>
+    /* additional search page styles */
+    .search-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .search-input-wrapper {
+      max-width: 600px;
+      margin: 0 auto 1rem;
+      position: relative;
+    }
+    .search-input-wrapper .field {
+      padding-right: 3rem;
+      font-size: 1rem;
+    }
+    .search-clear {
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: var(--muted);
+    }
+    .result-category {
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      border-left: 4px solid var(--accent-2);
+      padding-left: 1rem;
+    }
+    .result-category h2 {
+      font-size: 1.4rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .result-count {
+      font-size: 0.8rem;
+      background: var(--glass);
+      padding: 0.2rem 0.6rem;
+      border-radius: 2rem;
+      margin-left: 0.75rem;
+    }
+    .no-results {
+      padding: 2rem;
+      text-align: center;
+      color: var(--muted);
+    }
+    .search-result-item {
+      margin-bottom: 1rem;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .search-result-item:hover {
+      transform: translateX(6px);
+    }
+    .result-badge {
+      font-size: 0.7rem;
+      margin-right: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="particles" class="particles"></div>
+  <div id="scroll-progress" class="scroll-progress"></div>
+
+  <!-- top navbar (only Home, Doubts, Profile) -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="{% url 'index' %}" class="navbar-brand">
+        <div class="brand-icon">📚</div>
+        <span class="brand-name">E-learn</span>
+        <span class="brand-name"><sup>GPC Harsud</sup></span>
+      </a>
+      <div class="nav-links">
+        <a href="{% url 'index' %}" class="nav-link">🏠 Home</a>
+        <a href="{% url 'doubts' %}" class="nav-link">❓ Doubts</a>
+        <a href="{% url 'profile' %}" class="nav-link">👤 Profile</a>
+      </div>
+      <a href="{% url 'profile' %}" class="nav-mobile-icon btn btn-ghost btn-sm">👤</a>
+    </div>
+  </nav>
+
+  <main class="container page-content page-enter">
+    <div class="search-header">
+      <h1 class="gradient-text">🔍 Global Search</h1>
+      <p>Find notes, books, previous year papers across all branches & semesters</p>
+    </div>
+
+    <div class="search-input-wrapper">
+      <input type="text" id="global-search-input" class="field" placeholder="Search by title, subject, author, branch..." autofocus>
+      <button class="search-clear" id="clear-search" style="display: none;">✖</button>
+    </div>
+
+    <!-- results will be injected here -->
+    <div id="search-results"></div>
+  </main>
+
+  <!-- bottom navigation (5 options) -->
+  <nav class="bottom-nav">
+    <button class="bottom-nav-item" data-nav="notes">
+      <span class="nav-icon">📝</span>
+      <span>Notes</span>
+    </button>
+    <button class="bottom-nav-item" data-nav="syllabus">
+      <span class="nav-icon">📗</span>
+      <span>Syllabus</span>
+    </button>
+    <button class="bottom-nav-item search-circle active" data-nav="search">
+      <span class="nav-icon">🔍</span>
+      <span>Search</span>
+    </button>
+    <button class="bottom-nav-item" data-nav="books">
+      <span class="nav-icon">📖</span>
+      <span>Books</span>
+    </button>
+    <button class="bottom-nav-item" data-nav="pyq">
+      <span class="nav-icon">📄</span>
+      <span>PYQ</span>
+    </button>
+  </nav>
+
+  <div id="toast-wrap" class="toast-wrap"></div>
+
+  <script src="{% static 'js/csrf.js' %}"></script>
+  <script src="{% static 'js/data.js' %}"></script>
+  <script src="{% static 'js/swipe.js' %}"></script>
+  <script>
+    // Auto-run search if URL has ?q= parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialQuery = urlParams.get('q');
+
+    // Global search function
+    let searchDebounceTimer;
+
+    function performGlobalSearch() {
+      const query = document.getElementById('global-search-input').value.trim();
+      const clearBtn = document.getElementById('clear-search');
+      clearBtn.style.display = query ? 'block' : 'none';
+
+      if (query.length < 2) {
+        document.getElementById('search-results').innerHTML = '<div class="no-results">✨ Type at least 2 characters to search across notes, books & PYQs.</div>';
+        return;
+      }
+
+      // Show loading indicator
+      document.getElementById('search-results').innerHTML = '<div class="no-results">⏳ Searching everywhere...</div>';
+
+      // Fetch from three APIs simultaneously
+      Promise.all([
+        fetch(`/api/notes/?search=${encodeURIComponent(query)}&limit=20`).then(res => res.json().catch(() => ({ notes: [] }))),
+        fetch(`/api/books/?search=${encodeURIComponent(query)}`).then(res => res.json().catch(() => ({ books: [] }))),
+        fetch(`/api/pyqs/?search=${encodeURIComponent(query)}`).then(res => res.json().catch(() => ({ pyqs: [] })))
+      ]).then(([notesData, booksData, pyqsData]) => {
+        const notes = notesData.notes || [];
+        const books = booksData.books || [];
+        const pyqs = pyqsData.pyqs || [];
+
+        renderSearchResults(query, notes, books, pyqs);
+      }).catch(err => {
+        console.error(err);
+        document.getElementById('search-results').innerHTML = '<div class="no-results">⚠️ Search failed. Try again later.</div>';
+      });
+    }
+
+    function renderSearchResults(query, notes, books, pyqs) {
+      const container = document.getElementById('search-results');
+      let html = '';
+
+      // Notes section
+      if (notes.length > 0) {
+        html += `<div class="result-category"><h2>📝 Notes <span class="result-count">${notes.length}</span></h2></div>`;
+        notes.forEach(note => {
+          html += `
+            <div class="card-glass search-result-item" data-type="note" data-url="${note.pdf_url || '#'}">
+              <div class="flex-wrap-gap">
+                <span class="badge badge-cyan">${escapeHtml(note.branch)}</span>
+                <span class="badge badge-violet">Sem ${note.semester}</span>
+                <span class="badge badge-pink">Unit ${note.unit}</span>
+              </div>
+              <h3>${escapeHtml(note.title)}</h3>
+              <p class="desc">${escapeHtml(note.description || '')}</p>
+              <div class="meta">by ${escapeHtml(note.uploaded_by)} • ⬇ ${note.download_count || 0}</div>
+            </div>
+          `;
+        });
+      }
+
+      // Books section
+      if (books.length > 0) {
+        html += `<div class="result-category"><h2>📖 Books <span class="result-count">${books.length}</span></h2></div>`;
+        books.forEach(book => {
+          html += `
+            <div class="card-glass search-result-item" data-type="book" data-url="${book.pdf_url || '#'}">
+              <div class="flex-wrap-gap">
+                <span class="badge badge-cyan">${escapeHtml(book.branch)}</span>
+                <span class="badge badge-violet">Sem ${book.semester}</span>
+                <span class="badge badge-matrix">${escapeHtml(book.author)}</span>
+              </div>
+              <h3>${escapeHtml(book.title)}</h3>
+              <p class="desc">${escapeHtml(book.description || '')}</p>
+            </div>
+          `;
+        });
+      }
+
+      // PYQs section
+      if (pyqs.length > 0) {
+        html += `<div class="result-category"><h2>📄 Previous Year Papers <span class="result-count">${pyqs.length}</span></h2></div>`;
+        pyqs.forEach(pyq => {
+          html += `
+            <div class="card-glass search-result-item" data-type="pyq" data-url="${pyq.pdf_url || '#'}">
+              <div class="flex-wrap-gap">
+                <span class="badge badge-cyan">${escapeHtml(pyq.branch)}</span>
+                <span class="badge badge-violet">Sem ${pyq.semester}</span>
+                <span class="badge badge-pink">${pyq.exam_type === 'mid' ? 'Mid-Sem' : (pyq.exam_type === 'end' ? 'End-Sem' : 'Backlog')}</span>
+                <span class="badge">${pyq.year}</span>
+              </div>
+              <h3>${escapeHtml(pyq.subject)}</h3>
+            </div>
+          `;
+        });
+      }
+
+      if (notes.length === 0 && books.length === 0 && pyqs.length === 0) {
+        html = `<div class="no-results">😞 No results found for "${escapeHtml(query)}". Try a different keyword.</div>`;
+      }
+
+      container.innerHTML = html;
+
+      // attach click handlers to open PDFs
+      document.querySelectorAll('.search-result-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const url = item.dataset.url;
+          if (url && url !== '#') window.open(url, '_blank');
+          else showToast('Preview not available');
+        });
+      });
+    }
+
+    // input debounce
+    const searchInput = document.getElementById('global-search-input');
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(performGlobalSearch, 400);
+    });
+
+    // clear button
+    const clearBtn = document.getElementById('clear-search');
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      clearBtn.style.display = 'none';
+      performGlobalSearch();
+      searchInput.focus();
+    });
+
+    // initial empty state
+    performGlobalSearch();
+
+    // bottom navigation redirection (replace static URLs with Django URLs)
+    document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const dest = btn.getAttribute('data-nav');
+        let url = '';
+        if (dest === 'notes') url = "{% url 'notes' %}";
+        else if (dest === 'syllabus') url = "{% url 'syllabus' %}";
+        else if (dest === 'books') url = "{% url 'books' %}";
+        else if (dest === 'pyq') url = "{% url 'pyq' %}";
+        else if (dest === 'search') url = "{% url 'search' %}"; // self, do nothing
+        if (url && url !== window.location.pathname) window.location.href = url;
+      });
+    });
+
+    initCommon();
+  </script>
+</body>
+</html>

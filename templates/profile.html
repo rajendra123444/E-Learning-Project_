@@ -1,0 +1,278 @@
+{% load static %}
+{% url 'index' as index_%}
+{% url 'notes' as notes_%}
+{% url 'syllabus' as syllabus_%}
+{% url 'books' as books_%}
+{% url 'pyq' as pyq_%}
+{% url 'doubts' as doubts_%}
+{% url 'profile' as profile_%}
+{% load static %}
+{% if user.is_authenticated %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Profile — E-learn</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+  <div id="particles" class="particles"></div>
+  <div id="scroll-progress" class="scroll-progress"></div>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="{% url 'index' %}" class="navbar-brand">
+        <div class="brand-icon">📚</div>
+         <span class="brand-name" style="font-size: 20px;">E-learn</span>
+        <span class="brand-name"> <sup style="font-size:10px;">for- GPC Harsud </sup></span>
+      </a>
+      <div class="nav-links">
+        <a href="{% url 'index' %}" class="nav-link">🏠 Home</a>
+        <a href="{% url 'notes' %}" class="nav-link">📝 Notes</a>
+        <a href="{% url 'syllabus' %}" class="nav-link">📗 Syllabus</a>
+        <a href="{% url 'books' %}" class="nav-link">📖 Books</a>
+        <a href="{% url 'pyq' %}" class="nav-link">📄 PYQ</a>
+        <a href="{% url 'doubts' %}" class="nav-link">❓ Doubts</a>
+        <a href="{% url 'profile' %}" class="nav-link active">👤 Profile</a>
+      </div>
+      <a href="{% url 'profile' %}" class="nav-mobile-icon btn btn-ghost btn-sm">👤</a>
+    </div>
+  </nav>
+
+  <nav class="mobile-nav">
+    <a href="{% url 'index' %}">🏠<span>Home</span></a>
+    <a href="{% url 'notes' %}">📝<span>Notes</span></a>
+    <a href="{% url 'syllabus' %}">📗<span>Syllabus</span></a>
+    <a href="{% url 'books' %}">📖<span>Books</span></a>
+    <a href="{% url 'pyq' %}">📄<span>PYQ</span></a>
+    <a href="{% url 'doubts' %}">❓<span>Doubts</span></a>
+    <a href="{% url 'profile' %}">👤<span>Me</span></a>
+  </nav>
+
+
+  <main class="container page-content page-enter">
+    <section class="card-glass reveal" style="padding:2rem;margin-bottom:2.5rem">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1.5rem">
+        <button class="btn btn-ghost" onclick="openEditModal()">✏️ Edit Profile</button>
+        <div class="text-center" style="text-align:center;flex:1">
+          <div class="ring-glow" style="display:inline-block">
+            <img id="profile-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ user.username }}" alt="avatar">
+          </div>
+          <h1 id="profile-name" style="font-size:1.8rem;font-weight:700;margin-top:1rem"></h1>
+          <p id="profile-college" style="color:var(--muted);font-size:.9rem;margin-top:.3rem"></p>
+          <div class="profile-stats" id="profile-badges"></div>
+          <p id="profile-bio" style="color:var(--muted);margin-top:1rem;max-width:32rem;margin-left:auto;margin-right:auto;font-size:.9rem"></p>
+        </div>
+        <div style="display:flex;gap:1rem">
+           <button class="btn btn-primary" onclick="document.getElementById('my-notes').scrollIntoView({behavior:'smooth'})">📂 My Uploads →</button>
+            <form method="post" action="{% url 'logout' %}" style="display: inline;">
+             {% csrf_token %}
+            <button type="submit" class="btn btn-danger" style="background:linear-gradient(135deg,#ff3b6b,#ff6b9d);">🚪 Logout</button>
+        </form>
+        </div>
+      </div>
+    </section>
+
+    <section id="my-notes">
+      <h2 style="font-size:1.5rem;font-weight:700;margin-bottom:1.25rem">📂 My Uploaded Notes</h2>
+      <div class="grid-3" id="my-notes-grid"></div>
+    </section>
+    <section id="saved-notes">
+      <h2 style="font-size:1.5rem;font-weight:700;margin-bottom:1.25rem">🔖 Saved Notes</h2>
+      <div class="grid-3" id="saved-notes-grid"></div>
+    </section>
+  </main>
+
+
+
+  <!-- Edit Modal -->
+  <div id="edit-modal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal" onclick="event.stopPropagation()"> 
+      <h3>✏️ Edit Profile</h3>
+      <div class="modal-form">
+        <input class="field" id="edit-name" placeholder="Full Name">
+        <input class="field" id="edit-college" placeholder="College">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+          <select class="field" id="edit-branch"></select>
+          <select class="field" id="edit-sem"></select>
+        </div>
+        <textarea class="field" id="edit-bio" placeholder="Short bio"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="document.getElementById('edit-modal').style.display='none'">Cancel</button>
+        <button class="btn btn-primary" onclick="saveProfile()">💾 Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirm Modal -->
+  <div id="confirm-modal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this){this.style.display='none';pendingId=null}">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h3>Delete this note?</h3>
+      <p class="confirm-body">Are you sure you want to delete this note?</p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="document.getElementById('confirm-modal').style.display='none';pendingId=null">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmDelete()">Yes, Delete 🗑️</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-wrap" class="toast-wrap"></div>
+
+  <script src="{% static 'js/csrf.js' %}"></script>
+  <script src="{% static 'js/data.js' %}"></script>
+  <script src="{% static 'js/swipe.js' %}"></script>
+  <script>
+      let pendingId = null;
+      let currentUserData = {};
+
+      async function renderProfile() {
+          const profileRes = await fetch('/api/profile/');
+          currentUserData = await profileRes.json();
+          const user = currentUserData;
+          
+          // Avatar: use dicebear with username as seed (no upload)
+          const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`;
+          document.getElementById('profile-avatar').src = avatarUrl;
+          document.getElementById('profile-name').textContent = user.name || user.username;
+          document.getElementById('profile-college').textContent = user.college || '';
+          document.getElementById('profile-bio').textContent = user.bio || '';
+
+          const branchName = BRANCHES.find(b => b.code === user.branch)?.name || '';
+          document.getElementById('profile-badges').innerHTML = `
+              <span class="badge badge-cyan">${user.branch || '?'} — ${branchName}</span>
+              <span class="badge badge-violet">Semester ${user.semester || '?'}</span>
+          `;
+
+          const uploadsRes = await fetch('/api/user/uploads/');
+          const uploads = await uploadsRes.json();
+          renderMyNotes(uploads.notes);
+
+          const savedRes = await fetch('/api/user/saved/');
+          const saved = await savedRes.json();
+          renderSavedNotes(saved.notes);
+      }
+
+      function renderMyNotes(notes) {
+          const container = document.getElementById('my-notes-grid');
+          if (!notes || notes.length === 0) {
+              container.innerHTML = '<div class="card-glass empty">You haven\'t uploaded any notes yet.</div>';
+              return;
+          }
+          container.innerHTML = notes.map((n, i) => `
+              <article class="card-glass note-card reveal" style="transition-delay:${i*40}ms">
+                  <div class="note-card-badges">
+                      <span class="badge badge-cyan">${n.branch || '?'}</span>
+                      <span class="badge badge-violet">Sem ${n.semester || '?'}</span>
+                      <span class="badge badge-pink">Unit ${n.unit || '?'}</span>
+                  </div>
+                  <h3>${escapeHtml(n.title)}</h3>
+                  <p class="subject">${escapeHtml(n.subject)}</p>
+                  <p class="desc">${escapeHtml(n.description)}</p>
+                  <div class="meta" style="margin-top:.75rem">
+                      <span>${n.uploaded_at || ''}</span>
+                      <span>⬇ ${n.download_count || 0}</span>
+                  </div>
+                  <button class="btn btn-danger btn-sm" style="margin-top:1rem;width:100%" onclick="askDelete('${n.id}')">🗑️ Delete</button>
+              </article>
+          `).join('');
+          setTimeout(initReveal, 50);
+      }
+
+      function renderSavedNotes(notes) {
+          let savedContainer = document.getElementById('saved-notes-grid');
+          if (!notes || notes.length === 0) {
+              savedContainer.innerHTML = '<div class="card-glass empty">No saved notes yet.</div>';
+              return;
+          }
+          savedContainer.innerHTML = notes.map((n, i) => `
+              <article class="card-glass note-card reveal" style="transition-delay:${i*40}ms">
+                  <div class="note-card-badges">
+                      <span class="badge badge-cyan">${n.branch || '?'}</span>
+                      <span class="badge badge-violet">Sem ${n.semester || '?'}</span>
+                      <span class="badge badge-pink">Unit ${n.unit || '?'}</span>
+                  </div>
+                  <h3>${escapeHtml(n.title)}</h3>
+                  <p class="subject">${escapeHtml(n.subject)}</p>
+                  <p class="desc">${escapeHtml(n.description)}</p>
+                  <div class="meta">
+                      <span>by ${n.uploaded_by || 'unknown'}</span>
+                      <span>⬇ ${n.download_count || 0}</span>
+                  </div>
+              </article>
+          `).join('');
+      }
+
+      function askDelete(id) {
+          pendingId = id;
+          document.getElementById('confirm-modal').style.display = 'grid';
+      }
+
+      async function confirmDelete() {
+          if (!pendingId) return;
+          const response = await fetch(`/api/notes/${pendingId}/delete/`, {
+              method: 'DELETE',
+              headers: {'X-CSRFToken': getCookie('csrftoken')}
+          });
+          if (response.ok) {
+              pendingId = null;
+              document.getElementById('confirm-modal').style.display = 'none';
+              showToast('Note deleted');
+              renderProfile();  // refresh lists
+          } else {
+              showToast('Delete failed');
+          }
+      }
+
+      function openEditModal() {
+          // Use currentUserData fetched from API, not localStorage
+          document.getElementById('edit-name').value = currentUserData.name || '';
+          document.getElementById('edit-college').value = currentUserData.college || '';
+          document.getElementById('edit-bio').value = currentUserData.bio || '';
+          
+          document.getElementById('edit-branch').innerHTML = BRANCHES.map(b =>
+                  `<option value="${b.code}" ${b.code === currentUserData.branch ? 'selected' : ''}>${b.code} — ${b.name}</option>`
+          ).join('');
+          
+          let semHtml = '';
+          for (let s = 1; s <= 8; s++) semHtml += `<option value="${s}" ${s == currentUserData.semester ? 'selected' : ''}>Semester ${s}</option>`;
+          document.getElementById('edit-sem').innerHTML = semHtml;
+          
+          document.getElementById('edit-modal').style.display = 'grid';
+      }
+
+      async function saveProfile() {
+          const formData = new FormData();
+          formData.append('name', document.getElementById('edit-name').value);
+          formData.append('college', document.getElementById('edit-college').value);
+          formData.append('branch', document.getElementById('edit-branch').value);
+          formData.append('semester', document.getElementById('edit-sem').value);
+          formData.append('bio', document.getElementById('edit-bio').value);
+          
+          const response = await fetch('/api/profile/update/', {
+              method: 'POST',
+              headers: {'X-CSRFToken': getCookie('csrftoken')},
+              body: formData
+          });
+          if (response.ok) {
+              document.getElementById('edit-modal').style.display = 'none';
+              showToast('Profile updated');
+              renderProfile();  // reload data
+          } else {
+              showToast('Update failed');
+          }
+      }
+
+      renderProfile();
+      initCommon();
+  </script>
+</body>
+</html>
+{% else %}
+<!DOCTYPE html>
+<html>
+<head><meta http-equiv="refresh" content="0; url={% url 'login' %}"></head>
+<body>Please <a href="{% url 'login' %}">login</a> to view profile.</body>
+</html>
+{% endif %}

@@ -1,0 +1,234 @@
+{% load static %}
+{% url 'notes' as notes_%}
+{% url 'syllabus' as syllabus_%}
+{% url 'books' as books_%}
+{% url 'pyq' as pyq_%}
+{% url 'doubts' as doubts_%}
+{% url 'profile' as profile_%}
+{% url 'logout' as logout_%}
+{% url 'login' as login_%}
+{% url 'register' as register_%}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>E-learn | GPC Harsud – smart study hub</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+  <div id="particles" class="particles"></div>
+  <div id="scroll-progress" class="scroll-progress"></div>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="{% url 'index' %}" class="navbar-brand">
+        <div class="brand-icon">📚</div>
+        <span class="brand-name">E-learn</span>
+        <span class="brand-name"><sup>GPC Harsud</sup></span>
+      </a>
+      <div class="nav-links">
+        <a href="{% url 'index' %}" class="nav-link active">🏠 Home</a>
+        <a href="{% url 'notes' %}" class="nav-link">📝 Notes</a>
+        <a href="{% url 'syllabus' %}" class="nav-link">📗 Syllabus</a>
+        <a href="{% url 'books' %}" class="nav-link">📖 Books</a>
+        <a href="{% url 'pyq' %}" class="nav-link">📄 PYQ</a>
+        <a href="{% url 'doubts' %}" class="nav-link">❓ Doubts</a>
+        {% if user.is_authenticated %}
+          <a href="{% url 'profile' %}" class="nav-link">👤 Profile</a>
+          <a href="{% url 'logout' %}" class="nav-link">🚪 Logout</a>
+        {% else %}
+          <!-- <a href="{% url 'login' %}" class="nav-link">🔐 Login</a> -->
+         <a href="{% url 'register' %}" class="nav-link">📝 Register</a>
+        {% endif %}
+      </div>
+      
+    
+       <a href="{% url 'doubts' %}" class="nav-mobile-icon btn btn-ghost btn-sm">❓</a>
+    
+      {% if user.is_authenticated %}
+      <a href="{% url 'profile' %}" class="nav-mobile-icon btn btn-ghost btn-sm">👤</a>
+      {%else %}
+      <a href="{% url 'login' %}" class="nav-mobile-icon btn btn-ghost btn-sm">🔐</a>
+    {% endif %}
+
+      
+    </div>
+  </nav>
+  
+  <nav class="mobile-nav">
+    <a href="{% url 'index' %}" class="active">🏠<span>Home</span></a>
+    <a href="{% url 'notes' %}">📝<span>Notes</span></a>
+    <a href="{% url 'syllabus' %}">📗<span>Syllabus</span></a>
+    <a href="{% url 'books' %}">📖<span>Books</span></a>
+    <a href="{% url 'pyq' %}">📄<span>PYQ</span></a>
+   
+   
+  </nav>
+
+  <main>
+    <section class="hero">
+      <div>
+        <div class="hero-badge">⚡ Design & Develop by - Rajendra Sarathe</div>
+        <h1><span id="typed"></span><span id="typed-cursor">|</span><br></h1>
+          <!-- <span style="color:rebeccapurple";> Your Study Buddy, 24/7     </span></h1><br> --><br>
+         <h2> <span  style="color: rgb(182, 181, 203);"><pre><h2>Platform for All Your Needs,
+Notes, Books, Papers, Syllabus, Doubts & More,
+Learn from Others, Help Others,
+Build Your Academic Success..</h2></pre></span></h2>
+        <pre class="hero-desc" style="color: rgb(73, 72, 76);">
+ * Key Features:
+✅ Notes - Study materials
+✅ Books - Digital library
+✅ PYQ - Past papers
+✅ Syllabus - Curriculum
+✅ Doubts - Q&A forum/Community
+✅ Organization - By branch & semester
+✅ Completeness - All-in-one platform</pre>
+<!-- 
+📚 Notes Management - 
+    : Upload/download study notes organized by branch, semester, and subject
+📖 Books Catalog -
+    : Digital book library with ratings and cover gradients
+📝 Previous Year Questions (PYQ) - 
+    : Past exam papers organized by year and exam type
+📋 Syllabus - 
+    : Subject syllabi with unit-wise breakdown (JSON-based)
+❓ Doubts Forum  -
+    : Q&A system with auto-expiry (2 days solved, 7 days unsolved)
+🔖 Bookmarks - 
+    : Save notes for later
+👤 User Management - 
+    : Custom User model with roles (Student, Super Student, Admin) -->
+    
+        <div class="hero-actions">
+          <a href="{% url 'notes' %}" class="btn btn-primary">📝 Browse Notes</a>
+          <a href="{% url 'doubts' %}" class="btn btn-ghost">💡 Solve a Doubt</a>
+        </div>
+
+        <!-- 🔍 NEW: Global Search Bar
+        <form action="{% url 'search' %}" method="get" class="search-bar" style="margin-top: 1.8rem; display: flex; gap: .5rem; max-width: 500px;">
+          <input type="text" name="q" class="field" placeholder="Search notes, books, PYQs..." style="flex: 1;" required>
+          <button type="submit" class="btn btn-primary">🔍</button>
+        </form> -->
+
+
+        <div class="hero-stats">
+          <div><div class="stat-val gradient-text" data-counter="520">0+</div><div class="stat-label">Notes</div></div>
+          <div><div class="stat-val gradient-text" data-counter="210">0+</div><div class="stat-label">Books</div></div>
+          <div><div class="stat-val gradient-text" data-counter="1250">0+</div><div class="stat-label">Students</div></div>
+        </div>
+      </div>
+      <div class="hero-3d">
+        <div class="float-book" style="width:200px;height:268px;left:20px;top:30px;background:linear-gradient(135deg,#6c63ff,#00d4ff);">📘</div>
+        <div class="float-book" style="width:180px;height:246px;left:80px;top:70px;background:linear-gradient(135deg,#ff6b9d,#c44dff);">📕</div>
+        <div class="float-book" style="width:160px;height:224px;left:140px;top:110px;background:linear-gradient(135deg,#00d4ff,#39ff14);">📗</div>
+      </div>
+    </section>
+
+    <section style="margin-bottom:4rem;">
+      <div class="section-heading reveal"><h2>Everything you need, in one vault</h2><p>Crafted for clarity. Designed for speed. Animated for delight.</p></div>
+      <div class="features-grid">
+        <div class="card-glass feature-card reveal" data-url="{% url 'notes' %}"><div class="icon" style="font-size:2rem;">📝</div><h3>Crowd-sourced Notes</h3><p>Filter by branch, semester & unit. Upload, view, download, save.</p></div>
+        <div class="card-glass feature-card reveal" data-url="{% url 'syllabus' %}"><div class="icon" style="font-size:2rem;">📗</div><h3>Smart Syllabus</h3><p>Unit-wise breakdown for every subject with direct PDF view.</p></div>
+        <div class="card-glass feature-card reveal" data-url="{% url 'books' %}"><div class="icon" style="font-size:2rem;">📖</div><h3>Reference Books</h3><p>Curated library with covers, ratings and read-online links.</p></div>
+        <div class="card-glass feature-card reveal" data-url="{% url 'pyq' %}"><div class="icon" style="font-size:2rem;">📄</div><h3>Previous Year Papers</h3><p>Filter by year & exam type. Mid-sem, end-sem, backlog.</p></div>
+        <div class="card-glass feature-card reveal" data-url="{% url 'doubts' %}"><div class="icon" style="font-size:2rem;">❓</div><h3>Doubt Solving</h3><p>Ask, answer, and mark best replies. Pulse-glowing footer.</p></div>
+        <div class="card-glass feature-card reveal" data-url="{% url 'profile' %}"><div class="icon" style="font-size:2rem;">👤</div><h3>Your Vault</h3><p>See your uploads, manage profile, delete anything you uploaded.</p></div>
+      </div>
+    </section>
+
+   
+   </main>
+
+
+
+
+  <div id="ask-modal" class="modal-backdrop" style="display:none;" onclick="closeAskModal(event)"><div class="modal"><h3>❓ Ask a Doubt</h3><div class="modal-form"><input class="field" id="ask-title" placeholder="Doubt title"><div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem"><input class="field" id="ask-subject" placeholder="Subject"><select class="field" id="ask-branch"></select></div><select class="field" id="ask-sem"></select><textarea class="field" id="ask-desc" placeholder="Describe your doubt clearly…"></textarea></div><div class="modal-actions"><button class="btn btn-ghost" onclick="closeAskModal()">Cancel</button><button class="btn btn-primary" onclick="submitDoubtHome()">🚀 Post Doubt</button></div></div></div>
+  <div id="toast-wrap" class="toast-wrap"></div>
+
+  <script src="{% static 'js/data.js' %}"></script>
+  <script src="{% static 'js/swipe.js' %}"></script>
+  <script src="{% static 'js/csrf.js' %}"></script>
+  <script>
+    window.isAuthenticated = {% if user.is_authenticated %}true{% else %}false{% endif %};
+    // Typing animation (both `typed` and `typed-cursor-title`)
+    const TYPED = ['Share Notes.','Learn Better.','Grow Together.'];
+    const TYPED_TITLE = [
+      '"Your Study Buddy, 24/7" -<br>"Ace Your Semester" / "Semester Success Starts Here" -<br>"Study Smarter, Not Harder"',
+    ];
+
+    let tIdx=0, tText='', tDel=false;
+    const typedEl = document.getElementById('typed');
+    const typedTitleEl = document.getElementById('typed-cursor-title');
+
+    function applyTypedStyle(el) {
+      el.style.background = 'var(--gradient-hero)';
+      el.style.webkitBackgroundClip = 'text';
+      el.style.backgroundClip = 'text';
+      el.style.color = 'transparent';
+    }
+
+    function typeStep() {
+      // Main typed text
+      const word = TYPED[tIdx % TYPED.length];
+      if (!tDel) {
+        tText = word.slice(0, tText.length+1);
+        if (typedEl) {
+          typedEl.textContent = tText;
+          applyTypedStyle(typedEl);
+        }
+        if (tText.length === word.length) setTimeout(()=>{ tDel=true; }, 1200);
+      } else {
+        tText = word.slice(0, tText.length-1);
+        if (typedEl) typedEl.textContent = tText;
+        if (tText.length === 0) { tDel=false; tIdx++; }
+      }
+
+      // Typed-cursor-title: type in sync with main cursor without breaking HTML
+      // We type plain text of the title by stripping tags, then finally render HTML at the end.
+      if (typedTitleEl) {
+        // Use the first entry for now (single full text), but animate it character-by-character
+        const rawHtml = TYPED_TITLE[0];
+        const rawText = rawHtml.replace(/<br\s*\/?>/g, '\n');
+
+        const titleLen = tDel
+          ? Math.max(0, rawText.length - (tText.length === 0 ? 0 : 0))
+          : Math.min(rawText.length, tText.length);
+
+        const shown = rawText.slice(0, titleLen);
+        typedTitleEl.innerHTML = shown
+          .split('\n')
+          .map(line => (line === '' ? '<br>' : line))
+          .join('<br>');
+
+        applyTypedStyle(typedTitleEl);
+
+      }
+
+      setTimeout(typeStep, tDel ? 40 : 80);
+    }
+    typeStep();
+
+    function animateCounter(el) { const to = parseInt(el.dataset.counter); const start = performance.now(); const tick = (t) => { let p = Math.min(1,(t-start)/1500); let val = Math.floor(to * (1 - Math.pow(1-p, 3))); el.textContent = val.toLocaleString() + '+'; el.style.background = 'var(--gradient-hero)'; el.style.webkitBackgroundClip = 'text'; if(p<1) requestAnimationFrame(tick); }; requestAnimationFrame(tick); }
+    const ioCounter = new IntersectionObserver(entries => { entries.forEach(e => { if (e.isIntersecting) { animateCounter(e.target); ioCounter.unobserve(e.target); } }); });
+    document.querySelectorAll('[data-counter]').forEach(el => ioCounter.observe(el));
+    async function renderHomeNotes() {
+        const resp = await fetch('/api/notes/?page=1'); const data = await resp.json(); const notes = (data.notes || []).slice(0,6);
+        const container = document.getElementById('home-notes');
+        if(!container) return;
+        container.innerHTML = notes.map((n,i)=>`<article class="card-glass note-card clickable-card reveal" data-pdf="${n.pdf_url || ''}" style="cursor:pointer; transition-delay:${i*50}ms"><div class="note-card-badges"><span class="badge badge-cyan">${n.branch}</span><span class="badge badge-violet">Sem ${n.semester}</span></div><h3>${escapeHtml(n.title)}</h3><p class="desc">${escapeHtml(n.description)}</p><div class="meta"><span>by ${escapeHtml(n.uploaded_by)}</span><span>⬇ ${n.download_count}</span></div></article>`).join('');
+        document.querySelectorAll('.clickable-card').forEach(card => { card.addEventListener('click', (e) => { const pdf = card.dataset.pdf; if(pdf && pdf!=='') window.open(pdf, '_blank'); else showToast('🔍 PDF link not available'); }); });
+        setTimeout(initReveal, 50);
+    }
+    function requireAuthHome(action) { if(!window.isAuthenticated) { showToast(`🔐 Please login to ${action}`); setTimeout(()=>{window.location.href="{% url 'login' %}?next={{ request.path }}";},1000); return false; } return true; }
+    window.openAskModal = function() { if(!requireAuthHome('ask a doubt')) return; document.getElementById('ask-branch').innerHTML = branchOptions('CSE', false); let sHtml='';for(let s=1;s<=8;s++) sHtml+=`<option value="${s}" ${s===4?'selected':''}>Semester ${s}</option>`; document.getElementById('ask-sem').innerHTML = sHtml; document.getElementById('ask-modal').style.display='grid'; };
+    window.closeAskModal = function(e) { if(!e || e.target===document.getElementById('ask-modal')) document.getElementById('ask-modal').style.display='none'; };
+    window.submitDoubtHome = async function() { if(!requireAuthHome('post doubt')) return; const title=document.getElementById('ask-title').value.trim(), subject=document.getElementById('ask-subject').value.trim(), desc=document.getElementById('ask-desc').value.trim(), branch=document.getElementById('ask-branch').value, sem=parseInt(document.getElementById('ask-sem').value); if(!title||!subject||!desc){showToast('Fill all fields');return;} const fd=new FormData(); fd.append('title',title); fd.append('subject',subject); fd.append('description',desc); fd.append('branch',branch); fd.append('semester',sem); const res=await fetch('/api/doubts/ask/',{method:'POST',headers:{'X-CSRFToken':getCookie('csrftoken')},body:fd}); if(res.ok){document.getElementById('ask-modal').style.display='none'; showToast('Doubt posted'); document.getElementById('ask-title').value=''; document.getElementById('ask-subject').value=''; document.getElementById('ask-desc').value='';} else showToast('Error posting doubt'); };
+    document.querySelectorAll('.feature-card').forEach(card => { card.addEventListener('click', () => { const url = card.dataset.url; if(url) window.location.href = url; }); });
+    renderHomeNotes(); initCommon();
+  </script>
+</body>
+</html>
+

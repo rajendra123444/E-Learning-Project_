@@ -1,0 +1,118 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>E-learn – Register · GPC Harsud</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <style>
+    .auth-container{min-height:80vh;display:flex;align-items:center;justify-content:center;padding:2rem}
+    .auth-card{max-width:520px;width:100%;background:rgba(19,19,43,0.65);backdrop-filter:blur(18px);border:1px solid rgba(0,212,255,0.3);border-radius:2rem;padding:2rem;box-shadow:0 25px 45px rgba(0,0,0,0.4),0 0 0 1px rgba(108,99,255,0.2)}
+    .field-group{margin-bottom:1.2rem}
+    .field-group label{display:block;margin-bottom:.35rem;font-size:.85rem;font-weight:500;color:var(--muted)}
+    .errorlist{background:rgba(255,59,107,0.2);border-left:3px solid #ff3b6b;padding:.5rem 1rem;border-radius:.8rem;font-size:.8rem;margin:.5rem 0;list-style:none}
+    .btn-block{width:100%;justify-content:center}
+  </style>
+</head>
+<body>
+  <div id="particles" class="particles"></div>
+  <div id="scroll-progress" class="scroll-progress"></div>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="{% url 'index' %}" class="navbar-brand">
+        <div class="brand-icon">📚</div>
+        <span class="brand-name" style="font-size:20px;">E-learn</span>
+        <span class="brand-name"><sup style="font-size:10px;">By- GPC Harsud</sup></span>
+      </a>
+      <div class="nav-links">
+        <a href="{% url 'login' %}" class="nav-link">🔐 Login</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container auth-container">
+    <div class="auth-card">
+      <h2 class="gradient-text" style="margin:0 0 1.2rem 0;">📝 Register</h2>
+
+      <form method="post" action="{% url 'register' %}">
+        {% csrf_token %}
+
+        <div class="field-group">
+          <label>Username *</label>
+          <input type="text" name="username" class="field" required placeholder="unique username">
+          {% if form.username.errors %}
+            <ul class="errorlist">{% for e in form.username.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+          {% endif %}
+        </div>
+
+        <div class="field-group">
+          <label>Email (optional)</label>
+          <input type="email" name="email" class="field" placeholder="you@example.com">
+        </div>
+
+        <div class="field-group">
+          <label>Password *</label>
+          <input type="password" name="password1" class="field" required placeholder="strong password">
+        </div>
+
+        <div class="field-group">
+          <label>Confirm Password *</label>
+          <input type="password" name="password2" class="field" required placeholder="repeat password">
+        </div>
+
+        <div class="field-group">
+          <label>Branch</label>
+          <select name="branch" class="field" id="reg-branch"></select>
+        </div>
+
+        <div class="field-group">
+          <label>Semester</label>
+          <select name="semester" class="field" id="reg-sem"></select>
+        </div>
+
+        <div class="field-group">
+          <label>College</label>
+          <input type="text" name="college" class="field" placeholder="GPC Harsud / other">
+        </div>
+
+
+        <input type="hidden" name="next" value="{{ next|default:'/' }}">
+
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top:.5rem;">✨ Register &amp; Join ✨</button>
+
+        {% if form.non_field_errors %}
+          <ul class="errorlist">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-wrap" class="toast-wrap"></div>
+
+  <script src="{% static 'js/csrf.js' %}"></script>
+  <script src="{% static 'js/data.js' %}"></script>
+  <script src="{% static 'js/swipe.js' %}"></script>
+  <script>
+
+    if (typeof BRANCHES !== 'undefined') {
+      const branchSelect = document.getElementById('reg-branch');
+      if (branchSelect) {
+        branchSelect.innerHTML = '<option value="">-- Select --</option>' +
+          BRANCHES.map(b => `<option value="${b.code}">${b.code} – ${b.name}</option>`).join('');
+      }
+    }
+
+    const semSelect = document.getElementById('reg-sem');
+    if (semSelect) {
+      semSelect.innerHTML = '<option value="">-- Select --</option>';
+      for (let i = 1; i <= 8; i++) semSelect.innerHTML += `<option value="${i}">Semester ${i}</option>`;
+    }
+
+    initCommon();
+  </script>
+</body>
+</html>
+
