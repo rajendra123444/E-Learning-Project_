@@ -10,8 +10,7 @@ Pillow
 # Environment variables management
 python-dotenv
 
-# WSGI HTTP Server
-gunicor
+
 
 # REST API Framework (if needed)
 djangorestframework
